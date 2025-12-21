@@ -10,7 +10,7 @@ public class SharedVector {
 
     public SharedVector(double[] vector, VectorOrientation orientation) {
         // TODO: store vector data and its orientation
-        this.vector = vector;
+        this.vector = vector; // should we copy the array?
         this.orientation = orientation;
     }
 
@@ -58,7 +58,7 @@ public class SharedVector {
 
     public void transpose() {
         // TODO: transpose vector
-        writeLock(); // should we?
+        writeLock();
         if (orientation == VectorOrientation.COLUMN_MAJOR)
             orientation = VectorOrientation.ROW_MAJOR;
         else
