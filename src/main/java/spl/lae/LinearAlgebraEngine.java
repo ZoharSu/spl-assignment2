@@ -4,6 +4,7 @@ import parser.*;
 import memory.*;
 import scheduling.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class LinearAlgebraEngine {
@@ -22,13 +23,42 @@ public class LinearAlgebraEngine {
     }
 
     public void loadAndCompute(ComputationNode node) {
-        // TODO: load operand matrices
-        // TODO: create compute tasks & submit tasks to executor
+        assert node != null && node.getNodeType() != ComputationNodeType.MATRIX;
+        ComputationNode leftNode = node.getChildren().get(0);
+        assert leftNode.getNodeType() == ComputationNodeType.MATRIX;
+
+        leftMatrix.loadRowMajor(leftNode.getMatrix());
+
+        if (node.getNodeType() == ComputationNodeType.MULTIPLY ||
+            node.getNodeType() == ComputationNodeType.ADD) {
+            assert node.getChildren().size() == 2;
+            ComputationNode rightNode = node.getChildren().get(1);
+            assert rightNode.getNodeType() == ComputationNodeType.MATRIX;
+
+            rightMatrix.loadRowMajor(rightNode.getMatrix());
+        }
+
+        executor.submitAll(switch (node.getNodeType()) {
+            case ADD           -> createAddTasks();
+            case MULTIPLY      -> createMultiplyTasks();
+            case NEGATE        -> createNegateTasks();
+            case TRANSPOSE     -> createTransposeTasks();
+            case null, default -> throw new IllegalArgumentException();
+        });
+
+        node.resolve(leftMatrix.readRowMajor());
     }
 
     public List<Runnable> createAddTasks() {
-        // TODO: return tasks that perform row-wise addition
-        return null;
+        List<Runnable> tasks = new ArrayList<>(leftMatrix.length());
+
+        for (int i = 0; i < leftMatrix.length(); i++) {
+            SharedVector lhs = leftMatrix.get(i),
+                         rhs = rightMatrix.get(i);
+
+            tasks.add(() -> lhs.add(rhs));
+        }
+        return tasks;
     }
 
     public List<Runnable> createMultiplyTasks() {
@@ -49,5 +79,34 @@ public class LinearAlgebraEngine {
     public String getWorkerReport() {
         // TODO: return summary of worker activity
         return null;
+    }
+
+    private boolean computableNode(ComputationNode node) {
+        if (node == null ||
+            node.getNodeType() == ComputationNodeType.MATRIX ||
+            node.getChildren() == null)
+            return false;
+
+        List<ComputationNode> children = node.getChildren();
+
+        for (ComputationNode child : children)
+            if (child.getNodeType() != ComputationNodeType.MATRIX)
+                return false;
+
+        switch (node.getNodeType()) {
+            case MULTIPLY, ADD:
+                if (children.size() != 2)
+                    return false;
+                break;
+
+            case TRANSPOSE, NEGATE:
+                if (children.size() != 1)
+                    return false;
+                break;
+
+            case MATRIX: return false;
+            case null:   return false;
+        }
+        return true;
     }
 }
