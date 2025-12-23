@@ -37,6 +37,7 @@ public class SharedVector {
 
     public void writeLock() {
         lock.writeLock().lock();
+        lock.writeLock().lock();
     }
 
     public void writeUnlock() {
@@ -44,6 +45,7 @@ public class SharedVector {
     }
 
     public void readLock() {
+        lock.readLock().lock();
         lock.readLock().lock();
     }
 
@@ -53,10 +55,8 @@ public class SharedVector {
 
     public void transpose() {
         writeLock();
-        if (orientation == VectorOrientation.COLUMN_MAJOR)
-            orientation = VectorOrientation.ROW_MAJOR;
-        else
-            orientation = VectorOrientation.COLUMN_MAJOR;
+        orientation = orientation == VectorOrientation.ROW_MAJOR ?
+            VectorOrientation.COLUMN_MAJOR : VectorOrientation.ROW_MAJOR;
         writeUnlock();
     }
 
@@ -134,7 +134,27 @@ public class SharedVector {
     }
 
     public void vecMatMul(SharedMatrix matrix) {
-        // TODO: compute row-vector × matrix
+        writeLock();
 
+        if (orientation == VectorOrientation.ROW_MAJOR)
+            vecMatMulRow(matrix);
+
+        if (orientation == VectorOrientation.COLUMN_MAJOR)
+            vecMatMulCol(matrix);
+
+        writeUnlock();
+    }
+
+    private void vecMatMulRow(SharedMatrix m) {
+        // TODO: implement
+        if (orientation != VectorOrientation.ROW_MAJOR)
+            return;
+
+    }
+
+    private void vecMatMulCol(SharedMatrix m) {
+        // TODO: implement
+        if (orientation != VectorOrientation.COLUMN_MAJOR)
+            return;
     }
 }
