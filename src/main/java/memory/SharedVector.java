@@ -9,7 +9,8 @@ public class SharedVector {
     private ReadWriteLock lock = new java.util.concurrent.locks.ReentrantReadWriteLock();
 
     public SharedVector(double[] vector, VectorOrientation orientation) {
-        // TODO: store vector data and its orientation
+        this.vector = vector;
+        this.orientation = orientation;
     }
 
     public double get(int index) {
@@ -18,8 +19,7 @@ public class SharedVector {
     }
 
     public int length() {
-        // TODO: return vector length
-        return 0;
+        return vector.length;
     }
 
     public VectorOrientation getOrientation() {
@@ -28,7 +28,7 @@ public class SharedVector {
     }
 
     public void writeLock() {
-        // TODO: acquire write lock
+        lock.writeLock().lock();
     }
 
     public void writeUnlock() {
@@ -36,7 +36,7 @@ public class SharedVector {
     }
 
     public void readLock() {
-        // TODO: acquire read lock
+        lock.readLock().lock();
     }
 
     public void readUnlock() {
@@ -44,7 +44,10 @@ public class SharedVector {
     }
 
     public void transpose() {
-        // TODO: transpose vector
+        writeLock();
+        orientation = orientation == VectorOrientation.ROW_MAJOR ?
+            VectorOrientation.COLUMN_MAJOR : VectorOrientation.ROW_MAJOR;
+        writeUnlock();
     }
 
     public void add(SharedVector other) {
@@ -52,7 +55,10 @@ public class SharedVector {
     }
 
     public void negate() {
-        // TODO: negate vector
+        writeLock();
+        for (int i = 0; i < vector.length; i++)
+            vector[i] = -vector[i];
+        writeUnlock();
     }
 
     public double dot(SharedVector other) {
@@ -61,6 +67,27 @@ public class SharedVector {
     }
 
     public void vecMatMul(SharedMatrix matrix) {
-        // TODO: compute row-vector × matrix
+        writeLock();
+
+        if (orientation == VectorOrientation.ROW_MAJOR)
+            vecMatMulRow(matrix);
+
+        if (orientation == VectorOrientation.COLUMN_MAJOR)
+            vecMatMulCol(matrix);
+
+        writeUnlock();
+    }
+
+    private void vecMatMulRow(SharedMatrix m) {
+        // TODO: implement
+        if (orientation != VectorOrientation.ROW_MAJOR)
+            return;
+
+    }
+
+    private void vecMatMulCol(SharedMatrix m) {
+        // TODO: implement
+        if (orientation != VectorOrientation.COLUMN_MAJOR)
+            return;
     }
 }
