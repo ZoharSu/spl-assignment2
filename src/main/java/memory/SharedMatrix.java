@@ -99,11 +99,12 @@ public class SharedMatrix {
 
     public SharedVector get(int index) {
         // TODO: return vector at index
-        if (index < 0 || index >= length())
+        SharedVector[] tmp = vectors;
+        if (index < 0 || index >= tmp.length)
             throw new IllegalArgumentException("Index out of bounds");
-
+        
         // this is fucked up
-        return vectors[index];
+        return tmp[index];
     }
 
     public int length() {
