@@ -27,37 +27,31 @@ public class SharedVector {
     }
 
     public int length() {
-        // TODO: return vector length
+        // Is it volatile?
         return vector.length;
     }
 
     public VectorOrientation getOrientation() {
-        // TODO: return vector orientation
         return orientation;
     }
 
     public void writeLock() {
-        // TODO: acquire write lock
         lock.writeLock().lock();
     }
 
     public void writeUnlock() {
-        // TODO: release write lock
         lock.writeLock().unlock();
     }
 
     public void readLock() {
-        // TODO: acquire read lock
         lock.readLock().lock();
     }
 
     public void readUnlock() {
-        // TODO: release read lock
         lock.readLock().unlock();
     }
 
     public void transpose() {
-        // TODO: transpose vector
         writeLock();
         if (orientation == VectorOrientation.COLUMN_MAJOR)
             orientation = VectorOrientation.ROW_MAJOR;
@@ -67,9 +61,17 @@ public class SharedVector {
     }
 
     public void add(SharedVector other) {
-        // TODO: add two vectors
         if (length() != other.length())
             throw new IllegalArgumentException("This and other are of different length");
+
+        if (this == other) {
+            writeLock();
+
+            for (int i = 0; i < vector.length; i++)
+                vector[i] *= 2;
+
+            writeUnlock();
+        }
 
         if (this.hashCode() < other.hashCode()) {
             writeLock();
