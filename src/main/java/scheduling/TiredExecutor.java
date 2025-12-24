@@ -12,12 +12,24 @@ public class TiredExecutor {
     private final AtomicInteger inFlight = new AtomicInteger(0);
 
     public TiredExecutor(int numThreads) {
-        // TODO
-        workers = null; // placeholder
+        workers = new TiredThread[numThreads];
+        for (int i = 0; i < numThreads; i++)
+            workers[i] = new TiredThread(i, 0);
+        idleMinHeap.addAll(List.of(workers));
     }
 
     public void submit(Runnable task) {
-        // TODO
+        try {
+            TiredThread thread = idleMinHeap.take();
+            thread.newTask(task);
+            int old, newVal;
+            do {
+                old = inFlight.get();
+                newVal = old+1;
+            } while (!inFlight.compareAndSet(old,newVal));
+        } catch(InterruptedException e) {
+            // TODO: DO THIS NOW TODO
+        }
     }
 
     public void submitAll(Iterable<Runnable> tasks) {
