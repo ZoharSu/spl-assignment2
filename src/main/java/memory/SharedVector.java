@@ -37,7 +37,6 @@ public class SharedVector {
 
     public void writeLock() {
         lock.writeLock().lock();
-        lock.writeLock().lock();
     }
 
     public void writeUnlock() {
@@ -45,7 +44,6 @@ public class SharedVector {
     }
 
     public void readLock() {
-        lock.readLock().lock();
         lock.readLock().lock();
     }
 
