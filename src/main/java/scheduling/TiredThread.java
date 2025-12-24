@@ -56,7 +56,11 @@ public class TiredThread extends Thread implements Comparable<TiredThread> {
      * it throws IllegalStateException.
      */
     public void newTask(Runnable task) {
-       // TODO
+    	if (busy.get())
+			throw new IllegalStateException("Thread is busy");
+    	handoff.add(task);
+		boolean old, newVal;
+		// SHOULD UPDATE busy
     }
 
     /**
@@ -69,7 +73,6 @@ public class TiredThread extends Thread implements Comparable<TiredThread> {
 
     @Override
     public void run() {
-       // TODO
     }
 
     @Override
