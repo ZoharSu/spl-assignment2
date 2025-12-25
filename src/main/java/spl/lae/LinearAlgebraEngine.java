@@ -15,6 +15,9 @@ public class LinearAlgebraEngine {
 
     public LinearAlgebraEngine(int numThreads) {
         // TODO: create executor with given thread count
+        if (numThreads <= 0)
+            throw new IllegalArgumentException("Number of threads must be positive");
+
         executor = new TiredExecutor(numThreads);
     }
 

@@ -9,13 +9,17 @@ public class SharedVector {
     private ReadWriteLock lock = new java.util.concurrent.locks.ReentrantReadWriteLock();
 
     public SharedVector(double[] vector, VectorOrientation orientation) {
-        // TODO: store vector data and its orientation
-        this.vector = vector; // should we copy the array?
+        if (vector == null || orientation == null) 
+            throw new IllegalArgumentException("Vector or orientation are null");
+        
+        this.vector = new double[vector.length];
+        for (int i = 0; i < vector.length; i++)
+            this.vector[i] = vector[i];
+
         this.orientation = orientation;
     }
 
     public double get(int index) {
-        // TODO: return element at index (read-locked)
         if (index < 0 || index >= length())
             throw new IllegalArgumentException("Index out of bounds");
 
@@ -69,9 +73,7 @@ public class SharedVector {
                 vector[i] *= 2;
 
             writeUnlock();
-        }
-
-        if (this.hashCode() < other.hashCode()) {
+        } else if (this.hashCode() < other.hashCode()) {
             writeLock();
             other.readLock();
 
@@ -93,7 +95,6 @@ public class SharedVector {
     }
 
     public void negate() {
-        // TODO: negate vector
         writeLock();
         
         for (int i = 0; i < vector.length; i++)
@@ -104,6 +105,11 @@ public class SharedVector {
 
     public double dot(SharedVector other) {
         // TODO: compute dot product (row · column)
+        // Does this need to be row and other column?
+        // Or should we just check length?
+
+        // Add case where this == other? though it still works
+        // Also can rearrange locking and logic
 
         if (length() != other.length())
             throw new IllegalArgumentException("This and other are of different length");
@@ -132,6 +138,10 @@ public class SharedVector {
     }
 
     public void vecMatMul(SharedMatrix matrix) {
+        // Are there constraints?
+        // Does this need to be a row?
+        // Does the matrix need to be column major?
+
         writeLock();
 
         if (orientation == VectorOrientation.ROW_MAJOR)
