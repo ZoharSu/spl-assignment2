@@ -14,7 +14,6 @@ public class LinearAlgebraEngine {
     private TiredExecutor executor;
 
     public LinearAlgebraEngine(int numThreads) {
-        // TODO: create executor with given thread count
         if (numThreads <= 0)
             throw new IllegalArgumentException("Number of threads must be positive");
 
@@ -24,8 +23,6 @@ public class LinearAlgebraEngine {
     public ComputationNode run(ComputationNode computationRoot) {
         // TODO: resolve computation tree step by step until final matrix is produced
 
-        // ERROR handling
-        
         while (computationRoot.getNodeType() != ComputationNodeType.MATRIX) {
             ComputationNode toResolve = computationRoot.findResolvable();
             toResolve.associativeNesting();
@@ -33,21 +30,24 @@ public class LinearAlgebraEngine {
             loadAndCompute(toResolve);
         }
 
-        return null;
+        return computationRoot;
     }
 
     public void loadAndCompute(ComputationNode node) {
-        assert node != null && node.getNodeType() != ComputationNodeType.MATRIX;
+        if (!computableNode(node))
+            throw new IllegalArgumentException("Can't compute node");
+
+        // assert node != null && node.getNodeType() != ComputationNodeType.MATRIX;
         ComputationNode leftNode = node.getChildren().get(0);
-        assert leftNode.getNodeType() == ComputationNodeType.MATRIX;
+        // assert leftNode.getNodeType() == ComputationNodeType.MATRIX;
 
         leftMatrix.loadRowMajor(leftNode.getMatrix());
 
         if (node.getNodeType() == ComputationNodeType.MULTIPLY ||
             node.getNodeType() == ComputationNodeType.ADD) {
-            assert node.getChildren().size() == 2;
+            // assert node.getChildren().size() == 2;
             ComputationNode rightNode = node.getChildren().get(1);
-            assert rightNode.getNodeType() == ComputationNodeType.MATRIX;
+            // assert rightNode.getNodeType() == ComputationNodeType.MATRIX;
 
             rightMatrix.loadRowMajor(rightNode.getMatrix());
         }
@@ -116,11 +116,12 @@ public class LinearAlgebraEngine {
 
     public String getWorkerReport() {
         // TODO: return summary of worker activity
-        return null;
+        return executor.getWorkerReport();
     }
 
     private boolean computableNode(ComputationNode node) {
         if (node == null ||
+            node.getNodeType() == null ||
             node.getNodeType() == ComputationNodeType.MATRIX ||
             node.getChildren() == null)
             return false;

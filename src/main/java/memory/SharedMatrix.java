@@ -29,7 +29,7 @@ public class SharedMatrix {
 
     public void loadRowMajor(double[][] matrix) {
         if (matrix == null)
-            throw new IllegalArgumentException("Matrix");
+            throw new IllegalArgumentException("Matrix is null");
 
         if (matrix.length == 0 || matrix[0].length == 0) {
             vectors = new SharedVector[0];
