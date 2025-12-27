@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+import memory.SharedMatrix;
 import memory.SharedVector;
 import memory.VectorOrientation;
 
@@ -17,6 +18,8 @@ public class VectorTest {
 
         double[] v2arr = {1, 1, 1};
         SharedVector v2 = new SharedVector(v2arr, VectorOrientation.ROW_MAJOR);
+
+        assertThrows(IllegalArgumentException.class, () -> v1.add(null));
 
         v1.add(v2);
         assertEquals(2, v1.get(0));
@@ -131,6 +134,8 @@ public class VectorTest {
         double[] v1arr =  {};
         SharedVector v1 = new SharedVector(v1arr, VectorOrientation.ROW_MAJOR);
 
+        assertThrows(IllegalArgumentException.class, () -> v1.dot(null));
+
         double[] v2arr =  {};
         SharedVector v2 = new SharedVector(v2arr, VectorOrientation.ROW_MAJOR);
 
@@ -149,6 +154,51 @@ public class VectorTest {
 
         assertEquals(30, v3.dot(v4));
         assertEquals(30, v4.dot(v3));
+    }
+
+    @Test
+    public void vecMatMulTest() {
+        double[][] m1arr = {
+            {1,2,3,4},
+            {5,6,7,8},
+            {9,10,11,12},
+        };
+
+        SharedMatrix m1 = new SharedMatrix(m1arr);
+
+        // General exception checking
+        double[] v1arr = {1,2,3};
+        SharedVector v1 = new SharedVector(v1arr, VectorOrientation.COLUMN_MAJOR);
+
+        assertThrows(IllegalArgumentException.class, () -> v1.vecMatMul(m1));
+
+        double[] v2arr = {1};
+        SharedVector v2 = new SharedVector(v2arr, VectorOrientation.ROW_MAJOR);
+
+        assertThrows(IllegalArgumentException.class, () -> v2.vecMatMul(null));
+        assertThrows(IllegalArgumentException.class, () -> v2.vecMatMul(m1));
+
+        // Checking row * row major
+        v1.transpose();
+        assertDoesNotThrow(() -> v1.vecMatMul(m1));
+        assertEquals(4, v1.length());
+        assertEquals(38, v1.get(0));
+        assertEquals(44, v1.get(1));
+        assertEquals(50, v1.get(2));
+        assertEquals(56, v1.get(3));
+
+        // Checking row * column major
+        for (int i = 0; i < m1.length(); i++)
+            m1.get(i).transpose();
+
+        double[] v3arr = {1,1,1,1};
+        SharedVector v3 = new SharedVector(v3arr, VectorOrientation.ROW_MAJOR);
+
+        assertDoesNotThrow(() -> v3.vecMatMul(m1));
+        assertEquals(3, v3.length());
+        assertEquals(10, v3.get(0));
+        assertEquals(26, v3.get(1));
+        assertEquals(42, v3.get(2));
     }
 
 }
