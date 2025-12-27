@@ -63,8 +63,11 @@ public class SharedVector {
     }
 
     public void add(SharedVector other) {
+        if (getOrientation() != other.getOrientation())
+            throw new IllegalArgumentException("Vectors are of different orientation");
+
         if (length() != other.length())
-            throw new IllegalArgumentException("This and other are of different length");
+            throw new IllegalArgumentException("Vectors are of different length");
 
         if (this == other) {
             writeLock();

@@ -4,7 +4,6 @@ import parser.*;
 import memory.*;
 import scheduling.*;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class LinearAlgebraEngine {
@@ -14,7 +13,6 @@ public class LinearAlgebraEngine {
     private TiredExecutor executor;
 
     public LinearAlgebraEngine(int numThreads) {
-        // TODO: create executor with given thread count
         if (numThreads <= 0)
             throw new IllegalArgumentException("Number of threads must be positive");
 
@@ -24,8 +22,6 @@ public class LinearAlgebraEngine {
     public ComputationNode run(ComputationNode computationRoot) {
         // TODO: resolve computation tree step by step until final matrix is produced
 
-        // ERROR handling
-        
         while (computationRoot.getNodeType() != ComputationNodeType.MATRIX) {
             ComputationNode toResolve = computationRoot.findResolvable();
             toResolve.associativeNesting();
@@ -33,94 +29,91 @@ public class LinearAlgebraEngine {
             loadAndCompute(toResolve);
         }
 
-        return null;
+        return computationRoot;
     }
 
     public void loadAndCompute(ComputationNode node) {
-        assert node != null && node.getNodeType() != ComputationNodeType.MATRIX;
-        ComputationNode leftNode = node.getChildren().get(0);
-        assert leftNode.getNodeType() == ComputationNodeType.MATRIX;
+        if (!computableNode(node))
+            throw new IllegalArgumentException("Uncomputable node");
 
+        ComputationNode leftNode = node.getChildren().get(0);
         leftMatrix.loadRowMajor(leftNode.getMatrix());
 
         if (node.getNodeType() == ComputationNodeType.MULTIPLY ||
-            node.getNodeType() == ComputationNodeType.ADD) {
-            assert node.getChildren().size() == 2;
+            node.getNodeType() == ComputationNodeType.ADD)
+            // Should probably load row or column based on node type
+        {
             ComputationNode rightNode = node.getChildren().get(1);
-            assert rightNode.getNodeType() == ComputationNodeType.MATRIX;
-
             rightMatrix.loadRowMajor(rightNode.getMatrix());
         }
 
-        executor.submitAll(switch (node.getNodeType()) {
-            case ADD           -> createAddTasks();
-            case MULTIPLY      -> createMultiplyTasks();
-            case NEGATE        -> createNegateTasks();
-            case TRANSPOSE     -> createTransposeTasks();
-            case null, default -> throw new IllegalArgumentException();
-        });
+
+        switch (node.getNodeType()) {
+            case ADD           : executor.submitAll(createAddTasks());       break;
+            case MULTIPLY      : executor.submitAll(createMultiplyTasks());  break;
+            case NEGATE        : executor.submitAll(createNegateTasks());    break;
+            case TRANSPOSE     : executor.submitAll(createTransposeTasks()); break;
+            case null, default : throw new IllegalArgumentException();
+        }
 
         node.resolve(leftMatrix.readRowMajor());
     }
 
     public List<Runnable> createAddTasks() {
-        List<Runnable> tasks = new ArrayList<>(leftMatrix.length());
+        // TODO: verify matrices dimensions and orientations
+        Runnable[] tasks = new Runnable[leftMatrix.length()];
 
         for (int i = 0; i < leftMatrix.length(); i++) {
             SharedVector lhs = leftMatrix.get(i),
                          rhs = rightMatrix.get(i);
 
-            tasks.add(() -> lhs.add(rhs));
+            tasks[i] = () -> lhs.add(rhs);
         }
-        return tasks;
+        return List.of(tasks);
     }
 
     public List<Runnable> createMultiplyTasks() {
+        // TODO: verify matrices dimensions and orientations
+        Runnable[] tasks = new Runnable[leftMatrix.length()];
 
-        // ERROR HANDLING
-
-        List<Runnable> tasks = new ArrayList<>();
         for (int i = 0; i < leftMatrix.length(); i++) {
             SharedVector lhs = leftMatrix.get(i);
-            tasks.add(() -> lhs.vecMatMul(rightMatrix));
+            tasks[i] = () -> lhs.vecMatMul(rightMatrix);
         }
 
-        return tasks;
+        return List.of(tasks);
     }
 
     public List<Runnable> createNegateTasks() {
+        Runnable[] tasks = new Runnable[leftMatrix.length()];
 
-        // ERROR HANDLING
-
-        List<Runnable> tasks = new ArrayList<>();
         for (int i = 0; i < leftMatrix.length(); i++) {
             SharedVector lhs = leftMatrix.get(i);
-            tasks.add(() -> lhs.negate());
+            tasks[i] = () -> lhs.negate();
         }
 
-        return tasks;
+        return List.of(tasks);
     }
 
     public List<Runnable> createTransposeTasks() {
+        Runnable[] tasks = new Runnable[leftMatrix.length()];
 
-        // ERROR HANDLING
-
-        List<Runnable> tasks = new ArrayList<>();
         for (int i = 0; i < leftMatrix.length(); i++) {
             SharedVector lhs = leftMatrix.get(i);
-            tasks.add(() -> lhs.transpose());
+            tasks[i] = () -> lhs.transpose();
         }
 
-        return tasks;
+        return List.of(tasks);
     }
 
     public String getWorkerReport() {
         // TODO: return summary of worker activity
-        return null;
+        return executor.getWorkerReport();
     }
 
     private boolean computableNode(ComputationNode node) {
         if (node == null ||
+            node.getNodeType() == null ||
             node.getNodeType() == ComputationNodeType.MATRIX ||
             node.getChildren() == null)
             return false;

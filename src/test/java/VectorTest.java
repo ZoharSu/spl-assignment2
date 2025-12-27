@@ -1,6 +1,5 @@
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.Disabled;
@@ -38,6 +37,14 @@ public class VectorTest {
 
         assertDoesNotThrow(() -> v3.add(v4));
         assertThrows(IllegalArgumentException.class, () -> v1.add(v3));
+
+        double[] v5arr = {1};
+        SharedVector v5 = new SharedVector(v5arr, VectorOrientation.ROW_MAJOR);
+
+        double[] v6arr = {1};
+        SharedVector v6 = new SharedVector(v6arr, VectorOrientation.COLUMN_MAJOR);
+
+        assertThrows(IllegalArgumentException.class, () -> v5.add(v6));
     }
 
     @Test

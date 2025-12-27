@@ -50,6 +50,10 @@ public class TiredThread extends Thread implements Comparable<TiredThread> {
         return timeIdle.get();
     }
 
+    public boolean getAlive() {
+        return alive.get();
+    }
+
     /**
      * Assign a task to this worker.
      * This method is non-blocking: if the worker is not ready to accept a task,
@@ -61,6 +65,8 @@ public class TiredThread extends Thread implements Comparable<TiredThread> {
         handoff.add(task);
         boolean old, newVal;
         // TODO: SHOULD UPDATE busy
+        if (!handoff.offer(task))
+            throw new IllegalStateException("Thread isn't ready to accept a new task");
     }
 
     /**
@@ -68,17 +74,55 @@ public class TiredThread extends Thread implements Comparable<TiredThread> {
      * Inserts a poison pill so the worker wakes up and exits.
      */
     public void shutdown() {
-       // TODO
+        try {
+            handoff.put(POISON_PILL);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
 
     @Override
     public void run() {
-		  // TODO
+        while (alive.get()) {
+            try {
+                // TODO
+                // is the placement of time field updates correct?
+                Runnable task = handoff.take();
+                timeIdle.addAndGet(System.nanoTime() - idleStartTime.get());
+                if (task == POISON_PILL)
+                    alive.set(false);
+                else {
+                    busy.set(true);
+                    long usedStartTime = System.nanoTime();
+                    try {
+                        task.run();
+                    } catch (Exception e) {
+                        // REMOVE THIS, ONLY FOR DEBUGGING PURPOSES
+                        e.printStackTrace();
+                    } finally {
+                        timeUsed.addAndGet(System.nanoTime() - usedStartTime);
+                        idleStartTime.set(System.nanoTime());
+                        busy.set(false);
+                    }
+                }
+            } catch (InterruptedException e) {
+                timeIdle.addAndGet(System.nanoTime() - idleStartTime.get());
+                alive.set(false);
+            }
+        }
     }
 
     @Override
     public int compareTo(TiredThread o) {
+        if (o == null)
+            throw new IllegalArgumentException("Thread is null");
+
         // TODO
-        return 0;
+        // Is there a different way lol?
+        // can't just do fatigue - otherFatigue
+        double fatigue = getFatigue();
+        double otherFatigue = o.getFatigue();
+        return (fatigue < otherFatigue ? -1 :
+            (fatigue == otherFatigue ? 0 : 1));
     }
 }
