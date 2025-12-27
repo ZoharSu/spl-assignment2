@@ -84,21 +84,22 @@ public class TiredThread extends Thread implements Comparable<TiredThread> {
                 // is the placement of time field updates correct?
                 Runnable task = handoff.take();
                 timeIdle.addAndGet(System.nanoTime() - idleStartTime.get());
-                if (task == POISON_PILL)
+                if (task == POISON_PILL) {
                     alive.set(false);
-                else {
-                    busy.set(true);
-                    long usedStartTime = System.nanoTime();
-                    try {
-                        task.run();
-                    } catch (Exception e) {
-                        // REMOVE THIS, ONLY FOR DEBUGGING PURPOSES
-                        e.printStackTrace();
-                    } finally {
-                        timeUsed.addAndGet(System.nanoTime() - usedStartTime);
-                        idleStartTime.set(System.nanoTime());
-                        busy.set(false);
-                    }
+                    return;
+                }
+                busy.set(true);
+                long usedStartTime = System.nanoTime();
+                try {
+                    task.run();
+                } catch (Exception e) {
+                    // TODO: REMOVE THIS, ONLY FOR DEBUGGING PURPOSES
+                    e.printStackTrace();
+                } finally {
+                    long nanoTime = System.nanoTime();
+                    timeUsed.addAndGet(nanoTime - usedStartTime);
+                    idleStartTime.set(nanoTime);
+                    busy.set(false);
                 }
             } catch (InterruptedException e) {
                 timeIdle.addAndGet(System.nanoTime() - idleStartTime.get());
@@ -112,12 +113,6 @@ public class TiredThread extends Thread implements Comparable<TiredThread> {
         if (o == null)
             throw new IllegalArgumentException("Thread is null");
 
-        // TODO
-        // Is there a different way lol?
-        // can't just do fatigue - otherFatigue
-        double fatigue = getFatigue();
-        double otherFatigue = o.getFatigue();
-        return (fatigue < otherFatigue ? -1 :
-            (fatigue == otherFatigue ? 0 : 1));
+        return Double.compare(getFatigue(), o.getFatigue());
     }
 }

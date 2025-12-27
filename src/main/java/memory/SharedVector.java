@@ -63,11 +63,12 @@ public class SharedVector {
     }
 
     public void add(SharedVector other) {
-        if (getOrientation() != other.getOrientation())
-            throw new IllegalArgumentException("Vectors are of different orientation");
-
-        if (length() != other.length())
-            throw new IllegalArgumentException("Vectors are of different length");
+        if (other == null ||
+            getOrientation() != other.getOrientation() ||
+            length() != other.length())
+        {
+            throw new IllegalArgumentException("Vector is null or length,orientation mismatch");
+        }
 
         if (this == other) {
             writeLock();
@@ -76,22 +77,24 @@ public class SharedVector {
                 vector[i] *= 2;
 
             writeUnlock();
-        } else if (this.hashCode() < other.hashCode()) {
+            return;
+        }
+
+        if (this.hashCode() < other.hashCode()) {
             writeLock();
             other.readLock();
-
-            for (int i = 0; i < vector.length; i++)
-                vector[i] += other.vector[i];
-
-            other.readUnlock();
-            writeUnlock();
         } else {
             other.readLock();
             writeLock();
+        }
 
-            for (int i = 0; i < vector.length; i++)
-                vector[i] += other.vector[i];
+        for (int i = 0; i < vector.length; i++)
+            vector[i] += other.vector[i];
 
+        if (this.hashCode() < other.hashCode()) {
+            other.readUnlock();
+            writeUnlock();
+        } else {
             writeUnlock();
             other.readUnlock();
         }
@@ -107,33 +110,26 @@ public class SharedVector {
     }
 
     public double dot(SharedVector other) {
-        // TODO: compute dot product (row · column)
-        // Does this need to be row and other column?
-        // Or should we just check length?
 
-        // Add case where this == other? though it still works
-        // Also can rearrange locking and logic
-
-        if (length() != other.length())
-            throw new IllegalArgumentException("This and other are of different length");
+        if (other == null || length() != other.length())
+            throw new IllegalArgumentException("Vector is null or length mismatch");
 
         double ret = 0;
         if (this.hashCode() < other.hashCode()) {
             readLock();
             other.readLock();
-
-            for (int i = 0; i < vector.length; i++)
-                ret += vector[i] * other.vector[i];
-
-            other.readUnlock();
-            readUnlock();
         } else {
             other.readLock();
             readLock();
+        }
 
-            for (int i = 0; i < vector.length; i++)
-                ret += vector[i] * other.vector[i];
+        for (int i = 0; i < vector.length; i++)
+            ret += vector[i] * other.vector[i];
 
+        if (this.hashCode() < other.hashCode()) {
+            other.readUnlock();
+            readUnlock();
+        } else {
             readUnlock();
             other.readUnlock();
         }
@@ -141,31 +137,57 @@ public class SharedVector {
     }
 
     public void vecMatMul(SharedMatrix matrix) {
-        // Are there constraints?
-        // Does this need to be a row?
-        // Does the matrix need to be column major?
+        if (orientation == VectorOrientation.COLUMN_MAJOR ||
+            matrix == null ||
+            matrix.length() == 0)
+        {
+            throw new IllegalArgumentException("Vector is column or matrix is null/empty");
+        }
 
-        writeLock();
-
-        if (orientation == VectorOrientation.ROW_MAJOR)
+        if (matrix.getOrientation() == VectorOrientation.ROW_MAJOR)
             vecMatMulRow(matrix);
-
-        if (orientation == VectorOrientation.COLUMN_MAJOR)
+        else if (matrix.getOrientation() == VectorOrientation.COLUMN_MAJOR)
             vecMatMulCol(matrix);
-
-        writeUnlock();
+        else
+            throw new IllegalArgumentException("Matrix has no orientation");
     }
 
     private void vecMatMulRow(SharedMatrix m) {
-        // TODO: implement
-        if (orientation != VectorOrientation.ROW_MAJOR)
-            return;
+        // Assuming vector is a row and matrix is row major
+        if (length() != m.length())
+            throw new IllegalArgumentException("Vector and matrix dimensions mismatch");
 
+        // TODO: I don't like this implementation
+        readLock();
+        double[][] mRow = m.readRowMajor();
+        double[] newVec = new double[mRow[0].length];
+
+        for (int i = 0; i < vector.length; i++)
+            for (int j = 0; j < mRow[0].length; j++)
+                newVec[j] += vector[i] * mRow[i][j];
+
+        readUnlock();
+        writeLock();
+        vector = newVec;
+        writeUnlock();
     }
 
     private void vecMatMulCol(SharedMatrix m) {
-        // TODO: implement
-        if (orientation != VectorOrientation.COLUMN_MAJOR)
-            return;
+        // Assuming vector is a row and matrix is column major
+        if (length() != m.get(0).length())
+            throw new IllegalArgumentException("Vector and matrix dimensions mismatch");
+
+        // TODO: I don't like this implementation
+        readLock();
+        double[] newVec = new double[m.length()];
+
+        for (int i = 0; i < m.length(); i++)
+            newVec[i] = dot(m.get(i));
+        
+        readUnlock();
+
+        writeLock();
+        vector = newVec;
+        writeUnlock();
     }
 }

@@ -52,7 +52,6 @@ public class TiredExecutor {
     // WHY DOES THIS METHOD THROW INTERRUPTED EXCEPTION??
     public void shutdown() throws InterruptedException {
         for (TiredThread worker : workers) {
-            // Should we use the alive field?
             if (worker.getAlive())
                 worker.shutdown();
         }
@@ -64,13 +63,13 @@ public class TiredExecutor {
         String ret = "";
         for (TiredThread t : workers) {
             ret.concat(
-                "Id: " + t.getWorkerId() + "\n" +
-                "Fatigue:" + t.getFatigue() + "\n" +
-                "Busy:" + t.isBusy() + "\n" +
-                "Time used:" + t.getTimeUsed() + "\n" +
-                "Time idle:" + t.getTimeIdle() + "\n\n"
+                "Id: "          + t.getWorkerId()   + "\n" +
+                "Fatigue:"      + t.getFatigue()    + "\n" +
+                "Busy:"         + t.isBusy()        + "\n" +
+                "Time used:"    + t.getTimeUsed()   + "\n" +
+                "Time idle:"    + t.getTimeIdle()   + "\n\n"
             );
         }
-        return null;
+        return ret;
     }
 }
