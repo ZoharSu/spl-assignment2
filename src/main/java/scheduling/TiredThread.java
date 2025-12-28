@@ -72,7 +72,7 @@ public class TiredThread extends Thread implements Comparable<TiredThread> {
         try {
             handoff.put(POISON_PILL);
         } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
+            // A problem, prevents other threads from being shutdown
         }
     }
 
@@ -80,8 +80,6 @@ public class TiredThread extends Thread implements Comparable<TiredThread> {
     public void run() {
         while (alive.get()) {
             try {
-                // TODO
-                // is the placement of time field updates correct?
                 Runnable task = handoff.take();
                 timeIdle.addAndGet(System.nanoTime() - idleStartTime.get());
                 if (task == POISON_PILL) {

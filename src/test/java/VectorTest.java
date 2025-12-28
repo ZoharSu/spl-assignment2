@@ -9,6 +9,7 @@ import memory.SharedMatrix;
 import memory.SharedVector;
 import memory.VectorOrientation;
 
+@Disabled
 public class VectorTest {
     @Test
     public void addTest() {

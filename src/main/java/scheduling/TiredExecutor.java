@@ -32,20 +32,34 @@ public class TiredExecutor {
                 } finally {
                     inFlight.decrementAndGet();
                     idleMinHeap.add(thread);
+                    // TODO: Fix this
+                    notifyAll();
                 }
             });
         } catch(InterruptedException e) {
-            try {
-                shutdown();
-            } catch (InterruptedException e1) {
-                e1.printStackTrace();
-            }
+            // try {
+            //     // Shutdown, though shouldn't get here
+            //     shutdown();
+            // } catch (InterruptedException e1) {
+            //     e1.printStackTrace();
+            // }
         }
     }
 
     public void submitAll(Iterable<Runnable> tasks) {
         for (Runnable task : tasks)
             submit(task);
+
+        synchronized(this) {
+            while (inFlight.get() > 0) {
+                try {
+                    this.wait();
+                } catch (InterruptedException e) {
+                    
+                }
+            }
+        }
+        
     }
 
     // TODO
@@ -57,12 +71,10 @@ public class TiredExecutor {
         }
     }
 
-    // WHY IS THIS SYNCHRONIZED?
     public synchronized String getWorkerReport() {
-        // TODO: return readable statistics for each worker
         String ret = "";
         for (TiredThread t : workers) {
-            ret.concat(
+            ret = ret.concat(
                 "Id: "          + t.getWorkerId()   + "\n" +
                 "Fatigue:"      + t.getFatigue()    + "\n" +
                 "Busy:"         + t.isBusy()        + "\n" +

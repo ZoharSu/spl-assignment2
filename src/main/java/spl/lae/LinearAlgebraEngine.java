@@ -29,6 +29,9 @@ public class LinearAlgebraEngine {
             loadAndCompute(toResolve);
         }
 
+        try {
+            executor.shutdown();
+        } catch (Exception e) {}
         return computationRoot;
     }
 
