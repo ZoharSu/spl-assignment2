@@ -69,40 +69,39 @@ public class TiredThread extends Thread implements Comparable<TiredThread> {
      * Inserts a poison pill so the worker wakes up and exits.
      */
     public void shutdown() {
-        try {
-            handoff.put(POISON_PILL);
-        } catch (InterruptedException e) {
-            // A problem, prevents other threads from being shutdown
-        }
+        handoff.add(POISON_PILL);
     }
 
     @Override
     public void run() {
         while (alive.get()) {
             try {
-                Runnable task = handoff.take();
-                timeIdle.addAndGet(System.nanoTime() - idleStartTime.get());
-                if (task == POISON_PILL) {
-                    alive.set(false);
-                    return;
-                }
-                busy.set(true);
-                long usedStartTime = System.nanoTime();
-                try {
-                    task.run();
-                } catch (Exception e) {
-                    // TODO: REMOVE THIS, ONLY FOR DEBUGGING PURPOSES
-                    e.printStackTrace();
-                } finally {
-                    long nanoTime = System.nanoTime();
-                    timeUsed.addAndGet(nanoTime - usedStartTime);
-                    idleStartTime.set(nanoTime);
-                    busy.set(false);
-                }
+                runTask(handoff.take());
             } catch (InterruptedException e) {
                 timeIdle.addAndGet(System.nanoTime() - idleStartTime.get());
                 alive.set(false);
             }
+        }
+    }
+
+    private void runTask(Runnable task) {
+        timeIdle.addAndGet(System.nanoTime() - idleStartTime.get());
+
+        if (task == POISON_PILL) {
+            alive.set(false);
+            return;
+        }
+
+        busy.set(true);
+        long usedStartTime = System.nanoTime();
+
+        try {
+            task.run();
+        } finally {
+            long nanoTime = System.nanoTime();
+            timeUsed.addAndGet(nanoTime - usedStartTime);
+            idleStartTime.set(nanoTime);
+            busy.set(false);
         }
     }
 
