@@ -12,38 +12,44 @@ public class SharedMatrix {
         if (matrix == null)
             throw new IllegalArgumentException("Matrix is null");
 
-        if (matrix.length == 0 || matrix[0].length == 0) {
+        if (matrix.length == 0) {
             vectors = new SharedVector[0];
             return;
         }
 
-        vectors = new SharedVector[matrix.length];
-        for (int i = 0; i < vectors.length; i++) {
+        // Validity check
+        for (int i = 1; i < matrix.length; i++) {
             if (matrix[i].length != matrix[0].length)
                 // Check matrix validity so far
                 throw new IllegalArgumentException("Invalid matrix");
-            
-            vectors[i] = new SharedVector(matrix[i], VectorOrientation.ROW_MAJOR);
         }
+            
+        vectors = new SharedVector[matrix.length];
+
+        for (int i = 0; i < vectors.length; i++)
+            vectors[i] = new SharedVector(matrix[i], VectorOrientation.ROW_MAJOR);
     }
 
     public void loadRowMajor(double[][] matrix) {
         if (matrix == null)
             throw new IllegalArgumentException("Matrix is null");
 
-        if (matrix.length == 0 || matrix[0].length == 0) {
+        if (matrix.length == 0) {
             vectors = new SharedVector[0];
             return;
         }
 
-        SharedVector[] newVectors = new SharedVector[matrix.length];
-        for (int i = 0; i < matrix.length; i++) {
+        // Validity check
+        for (int i = 1; i < matrix.length; i++) {
             if (matrix[i].length != matrix[0].length)
                 // Check matrix validity so far
                 throw new IllegalArgumentException("Invalid matrix");
-            
-            newVectors[i] = new SharedVector(matrix[i], VectorOrientation.ROW_MAJOR);
         }
+
+        SharedVector[] newVectors = new SharedVector[matrix.length];
+        for (int i = 0; i < matrix.length; i++)
+            newVectors[i] = new SharedVector(matrix[i], VectorOrientation.ROW_MAJOR);
+
         vectors = newVectors;
     }
 
@@ -51,7 +57,7 @@ public class SharedMatrix {
         if (matrix == null)
             throw new IllegalArgumentException("Matrix is null");
 
-        if (matrix.length == 0 || matrix[0].length == 0) {
+        if (matrix.length == 0) {
             vectors = new SharedVector[0];
             return;
         }

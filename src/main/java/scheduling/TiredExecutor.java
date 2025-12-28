@@ -33,7 +33,9 @@ public class TiredExecutor {
                     inFlight.decrementAndGet();
                     idleMinHeap.add(thread);
                     // TODO: Fix this
-                    notifyAll();
+                    synchronized(this) {
+                        notifyAll();
+                    }
                 }
             });
         } catch(InterruptedException e) {

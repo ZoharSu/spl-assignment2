@@ -26,7 +26,6 @@ public class VectorTest {
         assertEquals(2, v1.get(0));
         assertEquals(3, v1.get(1));
         assertEquals(4, v1.get(2));
-        // SHOULD WE CHECK IF ORIGINAL CHANGED?
 
         v2.add(v2);
         assertEquals(2, v2.get(0));
