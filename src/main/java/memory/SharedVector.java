@@ -157,10 +157,9 @@ public class SharedVector {
         if (length() != m.length())
             throw new IllegalArgumentException("Vector and matrix dimensions mismatch");
 
-        // TODO: I don't like this implementation
-        readLock();
         double[][] mRow = m.readRowMajor();
         double[] newVec = new double[mRow[0].length];
+        readLock();
 
         for (int i = 0; i < vector.length; i++)
             for (int j = 0; j < mRow[0].length; j++)
@@ -177,9 +176,8 @@ public class SharedVector {
         if (length() != m.get(0).length())
             throw new IllegalArgumentException("Vector and matrix dimensions mismatch");
 
-        // TODO: I don't like this implementation
-        readLock();
         double[] newVec = new double[m.length()];
+        readLock();
 
         for (int i = 0; i < m.length(); i++)
             newVec[i] = dot(m.get(i));

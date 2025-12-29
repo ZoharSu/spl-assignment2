@@ -31,7 +31,6 @@ public class TiredExecutor {
                     task.run();
                 } finally {
                     idleMinHeap.add(thread);
-                    // TODO: what do you think?
                     if (inFlight.decrementAndGet() == 0) {
                         synchronized(inFlight) {
                             inFlight.notifyAll();
@@ -39,15 +38,7 @@ public class TiredExecutor {
                     }
                 }
             });
-        } catch(InterruptedException e) {
-            // TODO: remove this
-            // try {
-            //     // Shutdown, though shouldn't get here
-            //     shutdown();
-            // } catch (InterruptedException e1) {
-            //     e1.printStackTrace();
-            // }
-        }
+        } catch(InterruptedException e) {}
     }
 
     public void submitAll(Iterable<Runnable> tasks) {
@@ -63,15 +54,11 @@ public class TiredExecutor {
         }
     }
 
-    // TODO
-    // WHY DOES THIS METHOD THROW INTERRUPTED EXCEPTION??
     public void shutdown() throws InterruptedException {
-        for (TiredThread worker : workers) {
+        for (TiredThread worker : workers)
             if (worker.getAlive())
                 worker.shutdown();
-        }
 
-        // TODO: I think this is the way
         for (TiredThread worker : workers)
             if (worker.getAlive())
                 worker.join();

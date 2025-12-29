@@ -20,9 +20,6 @@ public class LinearAlgebraEngine {
     }
 
     public ComputationNode run(ComputationNode computationRoot) {
-        // TODO: resolve computation tree step by step until final matrix is produced
-
-        // TODO: what do you think?
         try {
             while (computationRoot.getNodeType() != ComputationNodeType.MATRIX) {
                 ComputationNode toResolve = computationRoot.findResolvable();

@@ -106,13 +106,10 @@ public class SharedMatrix {
     }
 
     public SharedVector get(int index) {
-        // TODO: return vector at index
         SharedVector[] tmp = vectors;
         if (index < 0 || index >= tmp.length)
             throw new IllegalArgumentException("Index out of bounds");
         
-        // is this fine?
-        // should we return a copy?
         return tmp[index];
     }
 
@@ -121,9 +118,6 @@ public class SharedMatrix {
     }
 
     public VectorOrientation getOrientation() {
-        // TODO: return orientation
-
-        // is this fine?
         SharedVector[] tmp = vectors;
         if (tmp.length == 0)
             return null;
@@ -132,30 +126,29 @@ public class SharedMatrix {
         return tmp[0].getOrientation();
     }
 
-    // TODO: confirm this is fine
     private void acquireAllVectorReadLocks(SharedVector[] vecs) {
-        if (vecs == null) return; // is this fine?
+        if (vecs == null) return;
 
         for (int i = 0; i < vecs.length; i++)
             vecs[i].readLock();
     }
 
     private void releaseAllVectorReadLocks(SharedVector[] vecs) {
-        if (vecs == null) return; // is this fine?
+        if (vecs == null) return;
 
         for (int i = vecs.length - 1; i >= 0; i--)
             vecs[i].readUnlock();
     }
 
     private void acquireAllVectorWriteLocks(SharedVector[] vecs) {
-        if (vecs == null) return; // is this fine?
+        if (vecs == null) return;
 
         for (int i = 0; i < vecs.length; i++)
             vecs[i].writeLock();
     }
 
     private void releaseAllVectorWriteLocks(SharedVector[] vecs) {
-        if (vecs == null) return; // is this fine?
+        if (vecs == null) return;
 
         for (int i = vecs.length - 1; i >= 0; i--)
             vecs[i].writeUnlock();

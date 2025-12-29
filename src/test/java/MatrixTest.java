@@ -7,11 +7,6 @@ import org.junit.jupiter.api.Test;
 
 import memory.SharedMatrix;
 import memory.VectorOrientation;
-import parser.ComputationNode;
-import spl.lae.LinearAlgebraEngine;
-
-import java.util.Arrays;
-import java.util.List;
 
 @Disabled
 public class MatrixTest {
