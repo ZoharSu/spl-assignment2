@@ -112,6 +112,7 @@ public class SharedMatrix {
             throw new IllegalArgumentException("Index out of bounds");
         
         // is this fine?
+        // should we return a copy?
         return tmp[index];
     }
 
