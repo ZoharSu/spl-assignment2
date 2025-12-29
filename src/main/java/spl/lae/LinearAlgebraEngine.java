@@ -39,8 +39,7 @@ public class LinearAlgebraEngine {
     }
 
     public void loadAndCompute(ComputationNode node) {
-        if (!computableNode(node))
-            throw new IllegalArgumentException("Uncomputable node");
+        ensureLegalNode(node);
 
         ComputationNode leftNode = node.getChildren().get(0);
         leftMatrix.loadRowMajor(leftNode.getMatrix());
@@ -62,7 +61,7 @@ public class LinearAlgebraEngine {
             case MULTIPLY      : executor.submitAll(createMultiplyTasks());  break;
             case NEGATE        : executor.submitAll(createNegateTasks());    break;
             case TRANSPOSE     : executor.submitAll(createTransposeTasks()); break;
-            case null, default : throw new IllegalArgumentException();
+            case null, default : throw new IllegalArgumentException("Unreachable");
         }
 
         node.resolve(leftMatrix.readRowMajor());
@@ -119,33 +118,29 @@ public class LinearAlgebraEngine {
         return executor.getWorkerReport();
     }
 
-    private boolean computableNode(ComputationNode node) {
+    private void ensureLegalNode(ComputationNode node) {
         if (node == null ||
             node.getNodeType() == null ||
             node.getNodeType() == ComputationNodeType.MATRIX ||
             node.getChildren() == null)
-            return false;
+            throw new IllegalArgumentException("Illegal Node");
 
         List<ComputationNode> children = node.getChildren();
 
         for (ComputationNode child : children)
             if (child.getNodeType() != ComputationNodeType.MATRIX)
-                return false;
+                throw new IllegalArgumentException("Unreachable");
 
-        switch (node.getNodeType()) {
-            case MULTIPLY, ADD:
-                if (children.size() != 2)
-                    return false;
-                break;
+        if (node.getNodeType() == ComputationNodeType.ADD && children.size() < 2)
+            throw new IllegalArgumentException("Illegal operation: Addition of a single matrix");
 
-            case TRANSPOSE, NEGATE:
-                if (children.size() != 1)
-                    return false;
-                break;
+        if (node.getNodeType() == ComputationNodeType.MULTIPLY && children.size() < 2)
+            throw new IllegalArgumentException("Illegal operation: Multiplication of a single matrix");
 
-            case MATRIX: return false;
-            case null:   return false;
-        }
-        return true;
+        if (node.getNodeType() == ComputationNodeType.NEGATE && children.size() != 1)
+            throw new IllegalArgumentException("Illegal operation: Negation of Multiple (or 0) Matricies");
+
+        if (node.getNodeType() == ComputationNodeType.TRANSPOSE && children.size() != 1)
+            throw new IllegalArgumentException("Illegal operation: Transpose of Multiple (or 0) Matricies");
     }
 }
