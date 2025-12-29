@@ -11,17 +11,18 @@ public class Main {
         }
 
         int thread_num = Integer.parseInt(args[0]);
-        // String input = args[2], output = args[3];
         InputParser input = new InputParser();
         ComputationNode root;
-        try { root = input.parse(args[1]);
+        LinearAlgebraEngine engine;
+        try {
+            root = input.parse(args[1]);
+            engine = new LinearAlgebraEngine(thread_num);
+            engine.run(root);
         } catch (Exception e) {
-            // TODO: error message
+            OutputWriter.write(e.getMessage(), args[2]);
             return;
         }
 
-        LinearAlgebraEngine engine = new LinearAlgebraEngine(thread_num);
-        engine.run(root);
         System.out.println(engine.getWorkerReport());
         OutputWriter.write(root.getMatrix(), args[2]);
     }
