@@ -30,15 +30,17 @@ public class TiredExecutor {
                 try {
                     task.run();
                 } finally {
-                    inFlight.decrementAndGet();
                     idleMinHeap.add(thread);
-                    // TODO: Fix this
-                    synchronized(this) {
-                        notifyAll();
+                    // TODO: what do you think?
+                    if (inFlight.decrementAndGet() == 0) {
+                        synchronized(inFlight) {
+                            inFlight.notifyAll();
+                        }
                     }
                 }
             });
         } catch(InterruptedException e) {
+            // TODO: remove this
             // try {
             //     // Shutdown, though shouldn't get here
             //     shutdown();
@@ -52,16 +54,13 @@ public class TiredExecutor {
         for (Runnable task : tasks)
             submit(task);
 
-        synchronized(this) {
+        synchronized(inFlight) {
             while (inFlight.get() > 0) {
                 try {
-                    this.wait();
-                } catch (InterruptedException e) {
-                    
-                }
+                    inFlight.wait();
+                } catch (InterruptedException e) {}
             }
         }
-        
     }
 
     // TODO
@@ -71,19 +70,46 @@ public class TiredExecutor {
             if (worker.getAlive())
                 worker.shutdown();
         }
+
+        // TODO: I think this is the way
+        for (TiredThread worker : workers)
+            if (worker.getAlive())
+                worker.join();
     }
 
     public synchronized String getWorkerReport() {
-        String ret = "";
+        if (workers.length == 0)
+            return "";
+
+        StringBuilder ret = new StringBuilder();
+        double avgFatigue = 0;
+        double[] fatigueArr = new double[workers.length];
+
         for (TiredThread t : workers) {
-            ret = ret.concat(
+            double fatigue = t.getFatigue();
+            fatigueArr[t.getWorkerId()] = fatigue;
+            avgFatigue += fatigue;
+            ret.append(
+                "------------------------------"    + "\n" +
                 "Id: "          + t.getWorkerId()   + "\n" +
-                "Fatigue:"      + t.getFatigue()    + "\n" +
-                "Busy:"         + t.isBusy()        + "\n" +
-                "Time used:"    + t.getTimeUsed()   + "\n" +
-                "Time idle:"    + t.getTimeIdle()   + "\n\n"
+                "Fatigue: "     + fatigue           + "\n" +
+                "Busy: "        + t.isBusy()        + "\n" +
+                "Time used: "   + t.getTimeUsed()   + "\n" +
+                "Time idle: "   + t.getTimeIdle()   + "\n"
             );
         }
-        return ret;
+
+        avgFatigue /= workers.length;
+        double fairness = 0;
+        
+        for (TiredThread t : workers)
+            fairness += Math.pow(fatigueArr[t.getWorkerId()] - avgFatigue, 2);
+
+        ret.append(
+            "------------------------------"    + "\n" +
+            "Fairness: " + fairness             + "\n" +
+            "------------------------------"    + "\n"
+        );
+        return ret.toString();
     }
 }

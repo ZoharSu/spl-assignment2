@@ -22,16 +22,19 @@ public class LinearAlgebraEngine {
     public ComputationNode run(ComputationNode computationRoot) {
         // TODO: resolve computation tree step by step until final matrix is produced
 
-        while (computationRoot.getNodeType() != ComputationNodeType.MATRIX) {
-            ComputationNode toResolve = computationRoot.findResolvable();
-            toResolve.associativeNesting();
-            toResolve = toResolve.findResolvable();
-            loadAndCompute(toResolve);
-        }
-
+        // TODO: what do you think?
         try {
-            executor.shutdown();
-        } catch (Exception e) {}
+            while (computationRoot.getNodeType() != ComputationNodeType.MATRIX) {
+                ComputationNode toResolve = computationRoot.findResolvable();
+                toResolve.associativeNesting();
+                toResolve = toResolve.findResolvable();
+                loadAndCompute(toResolve);
+            }
+        } finally {
+            try {
+                executor.shutdown();
+            } catch (InterruptedException e) {}
+        }
         return computationRoot;
     }
 
@@ -44,10 +47,13 @@ public class LinearAlgebraEngine {
 
         if (node.getNodeType() == ComputationNodeType.MULTIPLY ||
             node.getNodeType() == ComputationNodeType.ADD)
-            // Should probably load row or column based on node type
         {
             ComputationNode rightNode = node.getChildren().get(1);
-            rightMatrix.loadRowMajor(rightNode.getMatrix());
+
+            if (node.getNodeType() == ComputationNodeType.MULTIPLY)
+                rightMatrix.loadColumnMajor(rightNode.getMatrix());
+            else
+                rightMatrix.loadRowMajor(rightNode.getMatrix());
         }
 
 
@@ -110,7 +116,6 @@ public class LinearAlgebraEngine {
     }
 
     public String getWorkerReport() {
-        // TODO: return summary of worker activity
         return executor.getWorkerReport();
     }
 

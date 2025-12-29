@@ -132,6 +132,7 @@ public class SharedMatrix {
         return tmp[0].getOrientation();
     }
 
+    // TODO: confirm this is fine
     private void acquireAllVectorReadLocks(SharedVector[] vecs) {
         if (vecs == null) return; // is this fine?
 

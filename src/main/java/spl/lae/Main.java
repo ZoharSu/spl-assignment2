@@ -22,6 +22,7 @@ public class Main {
 
         LinearAlgebraEngine engine = new LinearAlgebraEngine(thread_num);
         engine.run(root);
+        System.out.println(engine.getWorkerReport());
         OutputWriter.write(root.getMatrix(), args[2]);
     }
 }

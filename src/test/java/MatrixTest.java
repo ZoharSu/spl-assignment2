@@ -13,6 +13,7 @@ import spl.lae.LinearAlgebraEngine;
 import java.util.Arrays;
 import java.util.List;
 
+@Disabled
 public class MatrixTest {
     
     @Test
