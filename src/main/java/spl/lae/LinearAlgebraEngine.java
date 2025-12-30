@@ -138,10 +138,10 @@ public class LinearAlgebraEngine {
                 throw new IllegalArgumentException("Unreachable");
 
         if (node.getNodeType() == ComputationNodeType.ADD && children.size() < 2)
-            throw new IllegalArgumentException("Illegal operation: Addition of a single matrix");
+            throw new IllegalArgumentException("Illegal operation: Addition of a 0 or 1 matrices");
 
         if (node.getNodeType() == ComputationNodeType.MULTIPLY && children.size() < 2)
-            throw new IllegalArgumentException("Illegal operation: Multiplication of a single matrix");
+            throw new IllegalArgumentException("Illegal operation: Multiplication of a 0 or 1 matrices");
 
         if (node.getNodeType() == ComputationNodeType.NEGATE && children.size() != 1)
             throw new IllegalArgumentException("Illegal operation: Negation of Multiple (or 0) Matricies");
