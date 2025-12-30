@@ -65,7 +65,12 @@ public class LinearAlgebraEngine {
     }
 
     public List<Runnable> createAddTasks() {
-        // TODO: verify matrices dimensions and orientations
+        // Assuming left and right are row major
+        // as seen when loading the matrices
+        if (leftMatrix.length() != rightMatrix.length() ||
+            leftMatrix.get(0).length() != rightMatrix.get(0).length())
+            throw new IllegalArgumentException("Illegal operation: dimensions mismatch");
+
         Runnable[] tasks = new Runnable[leftMatrix.length()];
 
         for (int i = 0; i < leftMatrix.length(); i++) {
@@ -78,7 +83,11 @@ public class LinearAlgebraEngine {
     }
 
     public List<Runnable> createMultiplyTasks() {
-        // TODO: verify matrices dimensions and orientations
+        // Assuming left is row major and right is column major
+        // as seen when loading the matrices
+        if (leftMatrix.get(0).length() != rightMatrix.get(0).length())
+            throw new IllegalArgumentException("Illegal operation: dimensions mismatch");
+
         Runnable[] tasks = new Runnable[leftMatrix.length()];
 
         for (int i = 0; i < leftMatrix.length(); i++) {
@@ -120,7 +129,7 @@ public class LinearAlgebraEngine {
             node.getNodeType() == null ||
             node.getNodeType() == ComputationNodeType.MATRIX ||
             node.getChildren() == null)
-            throw new IllegalArgumentException("Illegal Node");
+            throw new IllegalArgumentException("Improper file");
 
         List<ComputationNode> children = node.getChildren();
 
