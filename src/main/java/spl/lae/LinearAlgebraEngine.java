@@ -13,23 +13,30 @@ public class LinearAlgebraEngine {
     private TiredExecutor executor;
 
     public LinearAlgebraEngine(int numThreads) {
+        if (numThreads <= 0)
+            throw new IllegalArgumentException("Number of threads must be positive");
+
         executor = new TiredExecutor(numThreads);
     }
 
     public ComputationNode run(ComputationNode computationRoot) {
-        while (computationRoot.getNodeType() != ComputationNodeType.MATRIX) {
-            ComputationNode toResolve = computationRoot.findResolvable();
-            toResolve.associativeNesting();
-            toResolve = toResolve.findResolvable();
-            loadAndCompute(toResolve);
+        try {
+            while (computationRoot.getNodeType() != ComputationNodeType.MATRIX) {
+                ComputationNode toResolve = computationRoot.findResolvable();
+                toResolve.associativeNesting();
+                toResolve = toResolve.findResolvable();
+                loadAndCompute(toResolve);
+            }
+        } finally {
+            try {
+                executor.shutdown();
+            } catch (InterruptedException e) {}
         }
-
         return computationRoot;
     }
 
     public void loadAndCompute(ComputationNode node) {
-        if (!computableNode(node))
-            throw new IllegalArgumentException("Uncomputable node");
+        ensureLegalNode(node);
 
         ComputationNode leftNode = node.getChildren().get(0);
         leftMatrix.loadRowMajor(leftNode.getMatrix());
@@ -38,7 +45,11 @@ public class LinearAlgebraEngine {
             node.getNodeType() == ComputationNodeType.ADD)
         {
             ComputationNode rightNode = node.getChildren().get(1);
-            rightMatrix.loadRowMajor(rightNode.getMatrix());
+
+            if (node.getNodeType() == ComputationNodeType.MULTIPLY)
+                rightMatrix.loadColumnMajor(rightNode.getMatrix());
+            else
+                rightMatrix.loadRowMajor(rightNode.getMatrix());
         }
 
 
@@ -47,14 +58,20 @@ public class LinearAlgebraEngine {
             case MULTIPLY      : executor.submitAll(createMultiplyTasks());  break;
             case NEGATE        : executor.submitAll(createNegateTasks());    break;
             case TRANSPOSE     : executor.submitAll(createTransposeTasks()); break;
-            case null, default : throw new IllegalArgumentException();
+            case null, default : throw new IllegalArgumentException("Unreachable");
         }
 
         node.resolve(leftMatrix.readRowMajor());
     }
 
     public List<Runnable> createAddTasks() {
-        var tasks = new Runnable[leftMatrix.length()];
+        // Assuming left and right are row major
+        // as seen when loading the matrices
+        if (leftMatrix.length() != rightMatrix.length() ||
+            leftMatrix.get(0).length() != rightMatrix.get(0).length())
+            throw new IllegalArgumentException("Illegal operation: dimensions mismatch");
+
+        Runnable[] tasks = new Runnable[leftMatrix.length()];
 
         for (int i = 0; i < leftMatrix.length(); i++) {
             SharedVector lhs = leftMatrix.get(i),
@@ -66,6 +83,11 @@ public class LinearAlgebraEngine {
     }
 
     public List<Runnable> createMultiplyTasks() {
+        // Assuming left is row major and right is column major
+        // as seen when loading the matrices
+        if (leftMatrix.get(0).length() != rightMatrix.get(0).length())
+            throw new IllegalArgumentException("Illegal operation: dimensions mismatch");
+
         Runnable[] tasks = new Runnable[leftMatrix.length()];
 
         for (int i = 0; i < leftMatrix.length(); i++) {
@@ -99,36 +121,32 @@ public class LinearAlgebraEngine {
     }
 
     public String getWorkerReport() {
-        // TODO: return summary of worker activity
-        return null;
+        return executor.getWorkerReport();
     }
 
-    private boolean computableNode(ComputationNode node) {
+    private void ensureLegalNode(ComputationNode node) {
         if (node == null ||
+            node.getNodeType() == null ||
             node.getNodeType() == ComputationNodeType.MATRIX ||
             node.getChildren() == null)
-            return false;
+            throw new IllegalArgumentException("Improper file");
 
         List<ComputationNode> children = node.getChildren();
 
         for (ComputationNode child : children)
             if (child.getNodeType() != ComputationNodeType.MATRIX)
-                return false;
+                throw new IllegalArgumentException("Unreachable");
 
-        switch (node.getNodeType()) {
-            case MULTIPLY, ADD:
-                if (children.size() != 2)
-                    return false;
-                break;
+        if (node.getNodeType() == ComputationNodeType.ADD && children.size() < 2)
+            throw new IllegalArgumentException("Illegal operation: Addition of 0 or 1 matrices");
 
-            case TRANSPOSE, NEGATE:
-                if (children.size() != 1)
-                    return false;
-                break;
+        if (node.getNodeType() == ComputationNodeType.MULTIPLY && children.size() < 2)
+            throw new IllegalArgumentException("Illegal operation: Multiplication of 0 or 1 matrices");
 
-            case MATRIX: return false;
-            case null:   return false;
-        }
-        return true;
+        if (node.getNodeType() == ComputationNodeType.NEGATE && children.size() != 1)
+            throw new IllegalArgumentException("Illegal operation: Negation of Multiple (or 0) Matricies");
+
+        if (node.getNodeType() == ComputationNodeType.TRANSPOSE && children.size() != 1)
+            throw new IllegalArgumentException("Illegal operation: Transpose of Multiple (or 0) Matricies");
     }
 }

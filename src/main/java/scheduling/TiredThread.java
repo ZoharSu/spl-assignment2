@@ -50,13 +50,18 @@ public class TiredThread extends Thread implements Comparable<TiredThread> {
         return timeIdle.get();
     }
 
+    public boolean getAlive() {
+        return alive.get();
+    }
+
     /**
      * Assign a task to this worker.
      * This method is non-blocking: if the worker is not ready to accept a task,
      * it throws IllegalStateException.
      */
     public void newTask(Runnable task) {
-       // TODO
+        if (!handoff.offer(task))
+            throw new IllegalStateException("Thread isn't ready to accept a new task");
     }
 
     /**
@@ -64,17 +69,48 @@ public class TiredThread extends Thread implements Comparable<TiredThread> {
      * Inserts a poison pill so the worker wakes up and exits.
      */
     public void shutdown() {
-       // TODO
+        // The handoff should be empty when calling shutdown()
+        handoff.add(POISON_PILL);
     }
 
     @Override
     public void run() {
-       // TODO
+        while (alive.get()) {
+            try {
+                runTask(handoff.take());
+            } catch (InterruptedException e) {
+                timeIdle.addAndGet(System.nanoTime() - idleStartTime.get());
+                alive.set(false);
+            }
+        }
+    }
+
+    private void runTask(Runnable task) {
+        timeIdle.addAndGet(System.nanoTime() - idleStartTime.get());
+
+        if (task == POISON_PILL) {
+            alive.set(false);
+            return;
+        }
+
+        long usedStartTime = System.nanoTime();
+        busy.set(true);
+
+        try {
+            task.run();
+        } finally {
+            long nanoTime = System.nanoTime();
+            timeUsed.addAndGet(nanoTime - usedStartTime);
+            idleStartTime.set(nanoTime);
+            busy.set(false);
+        }
     }
 
     @Override
     public int compareTo(TiredThread o) {
-        // TODO
-        return 0;
+        if (o == null)
+            throw new IllegalArgumentException("Thread is null");
+
+        return Double.compare(getFatigue(), o.getFatigue());
     }
 }
